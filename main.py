@@ -2,19 +2,19 @@ import requests
 from datetime import datetime
 import json
 
-vktoken = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008'
-# yatoken = ''
+vk_token = '958eb5d439726565e9333aa30e50e0f937ee432e927f0dbd541c541887d919a7c56f95c04217915c32008'
+# ya_token = ''
 
 
-class VkUser: #класс для работы с ВКонтакте
+class vk_user: #класс для работы с ВКонтакте
     url = 'https://api.vk.com/method/'
 
-    def __init__(self, vktoken, version):
+    def __init__(self, vk_token, version):
         self.params ={
-            'access_token': vktoken,
+            'access_token': vk_token,
             'v': version
         }
-    def VkGetPhotos(self, owner_id=31000938, count=5):
+    def vk_get_photos(self, owner_id=31000938, count=5):
         #получаем json о фотографиях профиля
         get_photos_url = self.url + 'photos.get'
         get_photos_params = {
@@ -22,7 +22,7 @@ class VkUser: #класс для работы с ВКонтакте
             'album_id': 'profile',
             'extended': 1,
             'photo_sizes': 1,
-            'count': 5
+            'count': count
         }
         req = requests.get(get_photos_url, params={**self.params, **get_photos_params}).json()
         #проверяем, доступны ли нам фотографии
@@ -41,9 +41,9 @@ class VkUser: #класс для работы с ВКонтакте
                  }]
             print('Получаем данные о фотографиях из профиля Вконтакте ', owner_id)
 
-            return YaUploader(owner_id, important_parameters).upload()
+            return ya_uploader(owner_id, important_parameters).upload()
 
-class YaUploader: #класс для работы с Яндекс Диском
+class ya_uploader: #класс для работы с Яндекс Диском
 
     def __init__(self, file_path, important_parameters):
         self.file_path = file_path
@@ -53,7 +53,7 @@ class YaUploader: #класс для работы с Яндекс Диском
     def get_headers(self,):
         return {
                 'Content-Type': 'application/json',
-                'Authorization': 'OAuth '+ yatoken
+                'Authorization': 'OAuth ' + ya_token
         }
 
     def create_path(self): #создаём на ЯДиске папку с именем в виде id пользователя
@@ -69,14 +69,18 @@ class YaUploader: #класс для работы с Яндекс Диском
         self.create_path()
         upload_list = []
         counter = 1
+        ready_names = []
         for files in self.important_parameters: #проверяем, если ли уже такое имя файла
             file_name = str(files['likes'])
-            for file in upload_list:
-                if file['file_name'] == str(files['likes']):
-                    file_name = str(files['likes']) + "_" + str(files['date'])
-                else:
-                    file_name = str(files['likes'])
-            path = '/' + self.file_path + '/' + str(file_name)
+            # for file in upload_list:
+            #     if file['file_name'] == str(files['likes']):
+            #         file_name = str(files['likes']) + "_" + str(files['date'])
+            #     else:
+            #         file_name = str(files['likes'])
+            if file_name in ready_names:
+                file_name = file_name + '_' + files['date']
+            ready_names += file_name
+            path = '/' + self.file_path + '/' + file_name
             url = files['url']
             params = {'path': path, 'url': url}
             response = requests.post(upload_url, headers=headers, params=params)
@@ -105,8 +109,9 @@ class YaUploader: #класс для работы с Яндекс Диском
         print('Отчет на вашем Ядекс Диске в папке вместе с фотографими! \nРабота программы окончена!')
 
 owner_id = str(input('Введите id пользователя vk: \n'))
-yatoken = input('Введите токен Яндекс.Диска: \n')
-vk_client = VkUser(vktoken, '5.131')
-uploader = YaUploader(owner_id, vk_client.VkGetPhotos(owner_id))
+ya_token = input('Введите токен Яндекс.Диска: \n')
+count = int(input('Введите количество загружаемых фотографий: \n'))
+vk_client = vk_user(vk_token, '5.131')
+vk_client.vk_get_photos(owner_id, count)
 
 
